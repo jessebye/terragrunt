@@ -138,11 +138,18 @@ func parseGetEnvParameters(parameters []string) (EnvVar, error) {
 	return envVariable, nil
 }
 
-// runCommand is a helper function that runs a command and returns the stdout as the interporation
+// runCommand is a helper function that runs a command and returns the stdout as the interpolation
 // result
 func runCommand(args []string, include *IncludeConfig, terragruntOptions *options.TerragruntOptions) (string, error) {
 	if len(args) == 0 {
 		return "", errors.WithStackTrace(EmptyStringNotAllowed("parameter to the run_cmd function"))
+	}
+
+	logOutput := ""
+	quietOutput := false
+	if args[0] == "--terragrunt-quiet" {
+		quietOutput = true
+		args = append(args[:0], args[1:]...)
 	}
 
 	currentPath := filepath.Dir(terragruntOptions.TerragruntConfigPath)
@@ -152,7 +159,12 @@ func runCommand(args []string, include *IncludeConfig, terragruntOptions *option
 		return "", errors.WithStackTrace(err)
 	}
 
-	terragruntOptions.Logger.Printf("run_cmd output: [%s]", cmdOutput.Stdout)
+	if quietOutput {
+		logOutput = "REDACTED"
+	} else {
+		logOutput = cmdOutput.Stdout
+	}
+	terragruntOptions.Logger.Printf("run_cmd output: [%s]", logOutput)
 	return cmdOutput.Stdout, nil
 }
 
